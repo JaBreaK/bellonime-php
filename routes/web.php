@@ -12,4 +12,4 @@ Route::get('/genres', [AnimeController::class, 'showAllGenres']);
 Route::get('/ongoing', [AnimeController::class, 'showOngoing']);
 Route::get('/completed', [AnimeController::class, 'showCompleted']);
 Route::get('/schedule', [AnimeController::class, 'showSchedule']);
-Route::get('/anime', [AnimeController::class, 'showAllAnime']);
+Route::get('/anime', [AnimeController::class, 'showAllAnime']); 
