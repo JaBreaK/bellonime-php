@@ -1,2 +1,3 @@
 /* resources/css/app.css */
 @import "tailwindcss";
+@import "slick-carousel/slick/slick.css"; 

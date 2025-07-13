@@ -9,6 +9,8 @@
     "devDependencies": {
         "@tailwindcss/postcss": "^4.1.11",
         "@tailwindcss/vite": "^4.0.0",
+        "@types/react-slick": "^0.23.13",
+        "@vitejs/plugin-react": "^4.6.0",
         "autoprefixer": "^10.4.21",
         "axios": "^1.8.2",
         "concurrently": "^9.0.1",
@@ -16,5 +18,14 @@
         "postcss": "^8.5.6",
         "tailwindcss": "^4.1.11",
         "vite": "^6.2.4"
+    },
+    "dependencies": {
+        "@inertiajs/react": "^2.0.14",
+        "framer-motion": "^12.23.3",
+        "lucide-react": "^0.525.0",
+        "react": "^19.1.0",
+        "react-dom": "^19.1.0",
+        "react-slick": "^0.30.3",
+        "slick-carousel": "^1.8.1"
     }
 }

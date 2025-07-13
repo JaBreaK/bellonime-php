@@ -7,62 +7,54 @@ use Illuminate\Support\Facades\Http; // Import HTTP Client bawaan Laravel
 use Illuminate\View\View;
 use Illuminate\Http\JsonResponse; // Import JsonResponse untuk fungsi API
 use Illuminate\Support\Facades\Log; // Tambahkan ini untuk logging
+use Inertia\Response;
 
 class AnimeController extends Controller
 {
     // Fungsi ini akan mengambil data dan mengirimkannya ke homepage
-    public function homepage(): View
+    public function homepage(): Response // <-- 2. Ganti return type-nya
     {
-        // Panggil API-mu menggunakan HTTP Client
         $response = Http::get('https://bellonime.vercel.app/otakudesu/home');
         $apiData = $response->json();
 
-        // Ambil daftar anime ongoing, beri fallback array kosong jika tidak ada
         $ongoingAnime = $apiData['data']['ongoing']['animeList'] ?? [];
         $completedAnime = $apiData['data']['completed']['animeList'] ?? [];
 
-        // Kirim data ke view 'homepage'
-        return view('homepage', [
+        // Perintah ini sekarang sudah sesuai dengan "janji"
+        return \Inertia\Inertia::render('Homepage', [
             'ongoingAnime' => $ongoingAnime,
             'completedAnime' => $completedAnime
         ]);
     }
 
-    public function showDetail(string $animeId): View
+public function showDetail(string $animeId): Response // Ganti return type ke Response
     {
-        // Panggil API detail menggunakan $animeId dari URL
         $response = Http::get('https://bellonime.vercel.app/otakudesu/anime/' . $animeId);
         $apiData = $response->json();
-
-        // Ambil data detail animenya
         $anime = $apiData['data'] ?? null;
 
-        // Jika anime tidak ditemukan, hentikan program dan tampilkan error 404
         if (!$anime) {
             abort(404, 'Anime tidak ditemukan.');
         }
 
-        // Kirim data $anime ke view baru bernama 'anime-detail'
-        return view('anime-detail', [
+        // Ganti `view()` menjadi `Inertia::render()`
+        return \Inertia\Inertia::render('Anime/Detail', [
             'anime' => $anime
         ]);
     }
-    public function watchEpisode(string $episodeId): View
+    
+ public function watchEpisode(string $episodeId): Response
     {
-        // Panggil API episode menggunakan $episodeId dari URL
         $response = Http::get('https://bellonime.vercel.app/otakudesu/episode/' . $episodeId);
         $apiData = $response->json();
-
-        // Ambil data detail episodenya
         $episode = $apiData['data'] ?? null;
 
-        // Jika episode tidak ditemukan, tampilkan error 404
         if (!$episode) {
             abort(404, 'Episode tidak ditemukan.');
         }
 
-        // Kirim data $episode ke view baru bernama 'watch'
-        return view('watch', [
+        // Kirim data ke komponen React 'Watch/Episode.jsx'
+        return \Inertia\Inertia::render('Watch/Episode', [
             'episode' => $episode
         ]);
     }
@@ -108,77 +100,85 @@ class AnimeController extends Controller
     }
 
     // --- TAMBAHKAN FUNGSI BARU INI ---
-    public function showAllGenres(): View
+    public function showAllGenres(): Response
     {
-        // Panggil API untuk mendapatkan semua genre
         $response = Http::get('https://bellonime.vercel.app/otakudesu/genres');
         $apiData = $response->json();
-
-        // Ambil list genre-nya
         $genreList = $apiData['data']['genreList'] ?? [];
 
-        // Kirim data ke view baru bernama 'genres'
-        return view('genres', ['genreList' => $genreList]);
+        // Ganti view() menjadi Inertia::render()
+        // 'Genres/Index' akan mencari file /Pages/Genres/Index.jsx
+        return \Inertia\Inertia::render('Genres/Index', [
+            'genreList' => $genreList
+        ]);
+    }
+    public function showAnimeByGenre(Request $request, string $genreId): Response
+    {
+        $page = $request->query('page', 1);
+        $response = Http::get("https://bellonime.vercel.app/otakudesu/genres/{$genreId}?page={$page}");
+        $apiData = $response->json();
+
+        // Kita juga perlu nama genre untuk judul halaman
+        $genreTitle = $apiData['data']['title'] ?? ucfirst($genreId);
+        $animeList = $apiData['data']['animeList'] ?? [];
+        $pagination = $apiData['pagination'] ?? null;
+
+        return \Inertia\Inertia::render('Genres/Detail', [
+            'genreTitle' => $genreTitle,
+            'genreId' => $genreId,
+            'animeList' => $animeList,
+            'pagination' => $pagination
+        ]);
     }
 
-    public function showOngoing(Request $request): View
+    public function showOngoing(Request $request): Response
     {
-        // Ambil nomor halaman dari URL (contoh: /ongoing?page=2)
         $page = $request->query('page', 1);
-
-        // Panggil API dengan parameter halaman
         $response = Http::get("https://bellonime.vercel.app/otakudesu/ongoing?order=update&page={$page}");
         $apiData = $response->json();
 
         $animeList = $apiData['data']['animeList'] ?? [];
         $pagination = $apiData['pagination'] ?? null;
 
-        // Kirim data anime dan data pagination ke view 'ongoing'
-        return view('ongoing', [
+        return \Inertia\Inertia::render('Ongoing', [
             'animeList' => $animeList,
             'pagination' => $pagination
         ]);
     }
-    public function showCompleted(Request $request): View
+     public function showCompleted(Request $request): Response
     {
-        // Ambil nomor halaman dari URL (contoh: /completed?page=2)
         $page = $request->query('page', 1);
-
-        // Panggil API dengan parameter halaman
-        $response = Http::get("https://bellonime.vercel.app/otakudesu/completed?order=update&page={$page}");
+        $response = Http::get("https://bellonime.vercel.app/otakudesu/completed?order=latest&page={$page}");
         $apiData = $response->json();
 
         $animeList = $apiData['data']['animeList'] ?? [];
         $pagination = $apiData['pagination'] ?? null;
 
-        // Kirim data anime dan data pagination ke view 'completed'
-        return view('completed', [
+        return \Inertia\Inertia::render('Completed', [
             'animeList' => $animeList,
             'pagination' => $pagination
         ]);
     }
-    public function showSchedule(): View
+    public function showSchedule(): Response
     {
-        // Panggil API untuk mendapatkan jadwal rilis
         $response = Http::get('https://bellonime.vercel.app/otakudesu/schedule');
         $apiData = $response->json();
-
-        // Ambil list jadwal per harinya
         $scheduleDays = $apiData['data']['days'] ?? [];
 
-        // Kirim data ke view baru bernama 'schedule'
-        return view('schedule', ['scheduleDays' => $scheduleDays]);
+        // Ganti view() menjadi Inertia::render()
+        return \Inertia\Inertia::render('Schedule', [
+            'scheduleDays' => $scheduleDays
+        ]);
     }
-    public function showAllAnime(): View
+    public function showAllAnime(): Response
     {
-        // Panggil API untuk mendapatkan semua anime yang sudah terkelompok
         $response = Http::get('https://bellonime.vercel.app/otakudesu/anime');
         $apiData = $response->json();
-
-        // Ambil list grup abjadnya
         $animeGroups = $apiData['data']['list'] ?? [];
 
-        // Kirim data ke view baru bernama 'anime'
-        return view('anime', ['animeGroups' => $animeGroups]);
+        // Ganti view() menjadi Inertia::render()
+        return \Inertia\Inertia::render('Anime/List', [
+            'animeGroups' => $animeGroups
+        ]);
     }
 }
